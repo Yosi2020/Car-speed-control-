@@ -12,6 +12,10 @@ import dlib
 import time
 import cv2
 import os
+from os.path import dirname, join
+
+from efficientnet.tfkeras import EfficientNetB4
+
 
 conf = {
     # maximum consecutive frames a given object is allowed to be
@@ -38,10 +42,9 @@ conf = {
     # flag indicating if the frame must be displayed
     "display": True,
     # path the object detection model
-    "model_path": "./EYUSpeed_model.h5",
+    "model_path": join(dirname(__file__),"./MobileNetSSD_deploy.caffemodel"),
     # path to the prototxt file of the object detection model
-    "prototxt_path": "MobileNetSSD_deploy.prototxt",
-    # flag used to check if dropbox is to be used and dropbox access
+    "prototxt_path": join(dirname(__file__), "./MobileNetSSD_deploy.prototxt"),    # flag used to check if dropbox is to be used and dropbox access
     # token
     "use_dropbox": False,
     "dropbox_access_token": "./Data",
@@ -50,7 +53,10 @@ conf = {
     "csv_name": "log.csv"
 }
 
-CLASSES = ["Automotive", "airplane", "motorbike"]
+CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
+           "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+           "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+           "sofa", "train", "tvmonitor"]
 
 def upload_file(tempFile, client, imageID):
     # upload the image to Dropbox and cleanup the tempory image
@@ -61,12 +67,13 @@ def upload_file(tempFile, client, imageID):
 
 # load our serialized model from disk
 print("[INFO] loading model...")
-net = cv2.dnn.readNetFromDarknet(conf["model_path"])
+net = cv2.dnn.readNetFromCaffe(conf["prototxt_path"], conf["model_path"])
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
 
 # initialize the video stream and allow the camera sensor to warmup
 print("[INFO] warming up camera...")
 #vs = VideoStream(src=0).start()
-vs = VideoStream(src=0).start()
+vs = VideoStream(src='./cars.mp4').start()
 time.sleep(2.0)
 # initialize the frame dimensions (we'll set them as soon as we read
 # the first frame from the video)
